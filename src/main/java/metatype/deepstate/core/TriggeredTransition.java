@@ -8,7 +8,7 @@ import metatype.deepstate.FiniteStateMachine.State;
 import metatype.deepstate.FiniteStateMachine.Transition;
 import metatype.deepstate.FiniteStateMachine.TransitionAction;
 
-public class TriggeredTransition<T> implements Transition {
+public class TriggeredTransition<T, U> implements Transition<U> {
   private static <T> Predicate<T> isTrue() {
     return eventTrigger -> true;
   }
@@ -18,12 +18,12 @@ public class TriggeredTransition<T> implements Transition {
   }
   
   private final Predicate<T> trigger;
-  private final State source;
-  private final State destination;
+  private final State<U> source;
+  private final State<U> destination;
   private final Optional<Guard<T>> guard;
-  private final Optional<TransitionAction<T>> action;
+  private final Optional<TransitionAction<T, U>> action;
   
-  public TriggeredTransition(Predicate<T> trigger, State source, State destination, Optional<Guard<T>> guard, Optional<TransitionAction<T>> action) {
+  public TriggeredTransition(Predicate<T> trigger, State<U> source, State<U> destination, Optional<Guard<T>> guard, Optional<TransitionAction<T, U>> action) {
     this.trigger = trigger;
     this.source = source;
     this.destination = destination;
@@ -31,21 +31,21 @@ public class TriggeredTransition<T> implements Transition {
     this.action = action;
   }
 
-  public TriggeredTransition(T trigger, State source, State destination, Optional<Guard<T>> guard, Optional<TransitionAction<T>> action) {
+  public TriggeredTransition(T trigger, State<U> source, State<U> destination, Optional<Guard<T>> guard, Optional<TransitionAction<T, U>> action) {
     this(isEqualTo(trigger), source, destination, guard, action);
   }
   
-  public TriggeredTransition(State source, State destination, Optional<Guard<T>> guard, Optional<TransitionAction<T>> action) {
+  public TriggeredTransition(State<U> source, State<U> destination, Optional<Guard<T>> guard, Optional<TransitionAction<T, U>> action) {
     this(isTrue(), source, destination, guard, action);
   }
   
   @Override
-  public State getSource() {
+  public State<U> getSource() {
     return source;
   }
 
   @Override
-  public State getDestination() {
+  public State<U> getDestination() {
     return destination;
   }
 
@@ -53,7 +53,7 @@ public class TriggeredTransition<T> implements Transition {
     return guard;
   }
   
-  public Optional<TransitionAction<T>> getAction() {
+  public Optional<TransitionAction<T, U>> getAction() {
     return action;
   }
   

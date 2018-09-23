@@ -13,26 +13,24 @@ import org.apache.logging.log4j.Logger;
 
 import metatype.deepstate.FiniteStateMachine;
 
-public class DeepStateFsm<T> implements FiniteStateMachine<T> {
+public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   private static final Logger LOG = LogManager.getLogger();
   
   private static final <T> Guard<T> isTrue() {
     return trigger -> true;
   }
   
-  private final String name;
-  private final SimpleState<T> initialState;
-  private final Set<TriggeredTransition<T>> transitions;
+  private final SimpleState<T, U> initialState;
+  private final Set<TriggeredTransition<T, U>> transitions;
   private final Consumer<Exception> uncaughtExceptionHandler;
   
   private final Object lock = new Object();
   private boolean active;
-  private SimpleState<T> current;
+  private SimpleState<T, U> current;
 
   private ConcurrentLinkedQueue<Event<T>> events;
   
-  public DeepStateFsm(String name, SimpleState<T> initial, Set<TriggeredTransition<T>> transitions, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
-    this.name = name;
+  public DeepStateFsm(SimpleState<T, U> initial, Set<TriggeredTransition<T, U>> transitions, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
     this.initialState = initial;
     this.transitions = Collections.unmodifiableSet(transitions);
     this.events = new ConcurrentLinkedQueue<>();
@@ -42,36 +40,26 @@ public class DeepStateFsm<T> implements FiniteStateMachine<T> {
   }
 
   @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public State getCurrentState() {
+  public State<U> getCurrentState() {
     synchronized (lock) {
       return current;
     }
   }
 
   @Override
-  public Deque<State> getCurrentStates() {
+  public Deque<State<U>> getCurrentStates() {
     synchronized (lock) {
-      Deque<State> states = new ArrayDeque<>();
+      Deque<State<U>> states = new ArrayDeque<>();
       states.add(current);
       
-      if (states.getLast() instanceof FiniteStateMachine<?>) {
-        states.addAll(((FiniteStateMachine<?>) states.getLast()).getCurrentStates());
+      if (states.getLast() instanceof FiniteStateMachine<?, ?>) {
+        states.addAll(((FiniteStateMachine<?, U>) states.getLast()).getCurrentStates());
       }
       return states;
     }
   }
   
-  @Override
-  public String toString() {
-    return name;
-  }
-
-  public State getInitialState() {
+  public State<U> getInitialState() {
     return initialState;
   }
 
@@ -94,7 +82,7 @@ public class DeepStateFsm<T> implements FiniteStateMachine<T> {
     }
   }
 
-  public DeepStateFsm<T> begin() {
+  public DeepStateFsm<T, U> begin() {
     LOG.debug("Setting initial state {}", initialState.getName());
     synchronized (lock) {
       current = initialState;
@@ -103,7 +91,7 @@ public class DeepStateFsm<T> implements FiniteStateMachine<T> {
     return this;
   }
 
-  public DeepStateFsm<T> end() {
+  public DeepStateFsm<T, U> end() {
     synchronized (lock) {
       LOG.debug("Leaving final state {}", current.getName());
       current.exit();
@@ -118,21 +106,15 @@ public class DeepStateFsm<T> implements FiniteStateMachine<T> {
       LOG.debug("Sending event {} to state {}", event, current.getName());
       current.accept(event);
 
-      Event<T> capturedEvent = event;
-      findMatchingTransition(event).ifPresent(transition -> performTransition(transition, capturedEvent));
+      transition(event);
     }
   }
 
-  private void performTransition(TriggeredTransition<T> transition, Event<T> event) {
-    LOG.debug("Transitioning from state {} to state {}", transition.getSource(), transition.getDestination());
-    current.exit();
-    fireTransitionAction(transition, event);
-    
-    current = (SimpleState<T>) transition.getDestination();
-    current.enter();
+  private void transition(Event<T> event) {
+    findMatchingTransition(event).ifPresent(transition -> performTransition(transition, event));
   }
 
-  private Optional<TriggeredTransition<T>> findMatchingTransition(Event<T> event) {
+  private Optional<TriggeredTransition<T, U>> findMatchingTransition(Event<T> event) {
     return transitions.stream()
       .filter(t -> t.getSource().equals(current))
       .filter(t -> t.getTrigger().test(event.getTrigger()))
@@ -140,7 +122,18 @@ public class DeepStateFsm<T> implements FiniteStateMachine<T> {
       .findFirst();
   }
 
-  private void fireTransitionAction(TriggeredTransition<T> transition, Event<T> event) {
+  private void performTransition(TriggeredTransition<T, U> transition, Event<T> event) {
+    LOG.debug("Transitioning from state {} to state {}", transition.getSource(), transition.getDestination());
+    current.exit();
+    fireTransitionAction(transition, event);
+    
+    current = (SimpleState<T, U>) transition.getDestination();
+    current.enter();
+    
+    transition(event);
+  }
+
+  private void fireTransitionAction(TriggeredTransition<T, U> transition, Event<T> event) {
     try {
       transition.getAction().ifPresent(action -> {
         LOG.debug("Invoking action for event {} during transtion {}", event, transition);

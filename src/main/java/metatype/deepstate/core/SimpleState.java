@@ -13,27 +13,27 @@ import metatype.deepstate.FiniteStateMachine.Event;
 import metatype.deepstate.FiniteStateMachine.State;
 import metatype.deepstate.FiniteStateMachine.StateAction;
 
-public class SimpleState<T> implements State, Consumer<Event<T>> {
+public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
   private static final Logger LOG = LogManager.getLogger();
 
   /** the name of the state */
-  private final String name;
+  private final U name;
   
   /** the action to execute before entering the state */
-  private final Optional<Action> entryAction;
+  private final Optional<Action<U>> entryAction;
   
   /** the action to execute after entering the state */
-  private final Optional<Action> exitAction;
+  private final Optional<Action<U>> exitAction;
   
   /** the set of internal actions to invoke when an event trigger matches */
-  private final Map<T, StateAction<T>> actions;
+  private final Map<T, StateAction<T, U>> actions;
   
   /** the action that is invoked if no other actions match */
-  private final Optional<StateAction<T>> defaultAction;
+  private final Optional<StateAction<T, U>> defaultAction;
   
   private final Consumer<Exception> uncaughtExceptionHandler;
   
-  public SimpleState(String name, Optional<Action> entry, Optional<Action> exit, Map<T, StateAction<T>> actions, Optional<StateAction<T>> defaultAction, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
+  public SimpleState(U name, Optional<Action<U>> entry, Optional<Action<U>> exit, Map<T, StateAction<T, U>> actions, Optional<StateAction<T, U>> defaultAction, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
     this.name = name;
     this.entryAction = entry;
     this.exitAction = exit;
@@ -46,18 +46,18 @@ public class SimpleState<T> implements State, Consumer<Event<T>> {
   }
 
   @Override
-  public String getName() {
+  public U getName() {
     return name;
   }
   
   @Override
   public String toString() {
-    return getName();
+    return getName().toString();
   }
 
   @Override
   public void accept(Event<T> event) {
-    StateAction<T> action = findActionForTrigger(event.getTrigger());
+    StateAction<T, U> action = findActionForTrigger(event.getTrigger());
     if (action == null) {
       return;
     }
@@ -83,15 +83,15 @@ public class SimpleState<T> implements State, Consumer<Event<T>> {
     }
   }
 
-  protected Optional<Action> getEntryAction() {
+  protected Optional<Action<U>> getEntryAction() {
     return entryAction;
   }
 
-  protected Optional<Action> getExitAction() {
+  protected Optional<Action<U>> getExitAction() {
     return exitAction;
   }
 
-  private void invokeActionForEvent(Event<T> event, StateAction<T> action) {
+  private void invokeActionForEvent(Event<T> event, StateAction<T, U> action) {
     try {
       LOG.debug("Invoking action for event {} on state {}", event, this);
       action.accept(this, event);
@@ -100,8 +100,8 @@ public class SimpleState<T> implements State, Consumer<Event<T>> {
     }
   }
   
-  private StateAction<T> findActionForTrigger(T trigger) {
-    StateAction<T> action = actions.get(trigger);
+  private StateAction<T, U> findActionForTrigger(T trigger) {
+    StateAction<T, U> action = actions.get(trigger);
     if (action == null) {
       action = defaultAction.orElse(null);
     }

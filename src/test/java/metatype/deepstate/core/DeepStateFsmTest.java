@@ -1,6 +1,5 @@
 package metatype.deepstate.core;
 
-import static metatype.deepstate.DeepState.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -45,7 +45,7 @@ public class DeepStateFsmTest {
   
   @Test
   public void testInitialState() {
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("Initial")
         .and().ready();
     
@@ -54,9 +54,9 @@ public class DeepStateFsmTest {
 
   @Test
   public void testOnInitialEntry() {
-    Action entry = mock(Action.class);
+    Action<String> entry = mock(Action.class);
     
-    model("test")
+    DeepState.<String, String>model()
         .startingWith("initial")
         .whenEntering(entry)
         .and().ready();
@@ -66,9 +66,9 @@ public class DeepStateFsmTest {
   
   @Test
   public void testStateAction() {
-    StateAction<String> action = mock(StateAction.class);
+    StateAction<String, String> action = mock(StateAction.class);
 
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("initial")
         .when("test", action)
         .and().ready();
@@ -79,9 +79,9 @@ public class DeepStateFsmTest {
 
   @Test
   public void testStateActionIsNotFired() {
-    StateAction<String> action = mock(StateAction.class);
+    StateAction<String, String> action = mock(StateAction.class);
 
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("initial")
         .when("test", action)
         .and().ready();
@@ -91,12 +91,25 @@ public class DeepStateFsmTest {
   }
   
   @Test
-  public void testTransition() {
-    Action entry = mock(Action.class);
-    Action exit = mock(Action.class);
-    TransitionAction<String> guard = mock(TransitionAction.class);
+  public void testDefaultAction() {
+    StateAction<String, String> action = mock(StateAction.class);
+
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
+        .startingWith("initial")
+        .whenNothingElseMatches(action)
+        .and().ready();
     
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    fsm.accept(new TestEvent("test"));
+    verify(action, times(1)).accept(any(), any());
+  }
+
+  @Test
+  public void testTransition() {
+    Action<String> entry = mock(Action.class);
+    Action<String> exit = mock(Action.class);
+    TransitionAction<String, String> guard = mock(TransitionAction.class);
+    
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("Initial")
         .whenExiting(exit)
         .and().define("Next")
@@ -116,18 +129,18 @@ public class DeepStateFsmTest {
 
   @Test
   public void testTransitionWithGuard() {
-    Action entry = mock(Action.class);
-    Action exit = mock(Action.class);
-    TransitionAction<String> guard = mock(TransitionAction.class);
+    Action<String> entry = mock(Action.class);
+    Action<String> exit = mock(Action.class);
+    TransitionAction<String, String> guard = mock(TransitionAction.class);
 
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("Initial")
         .whenExiting(exit)
         .and().define("Next")
         .whenEntering(entry)
         .and().transition("go").from("Initial").to("Next")
         .invoke(guard)
-        .guard((event) -> (Boolean) ((TestEvent) event).get())
+        .guardedBy((event) -> (Boolean) ((TestEvent) event).get())
         .and().ready();
 
     
@@ -147,7 +160,7 @@ public class DeepStateFsmTest {
   
   @Test
   public void testMultipleTransitions() {
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("Initial")
         .and().define("Next")
         .and().define("Other")
@@ -161,14 +174,18 @@ public class DeepStateFsmTest {
   
   @Test
   public void testSelfTransition() {
-    Action entry = mock(Action.class);
-    Action exit = mock(Action.class);
+    AtomicBoolean guard = new AtomicBoolean(true);
+    
+    Action<String> entry = mock(Action.class);
+    Action<String> exit = mock(Action.class);
 
-    FiniteStateMachine<String> fsm = DeepState.<String>model("test")
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
         .startingWith("Initial")
         .whenEntering(entry)
         .whenExiting(exit)
         .and().transition("goto self").from("Initial").to("Initial")
+        .guardedBy((event) -> guard.get())
+        .invoke((transition, event) -> guard.set(false))
         .and().ready();
 
     fsm.accept(new TestEvent("goto self"));
@@ -180,9 +197,9 @@ public class DeepStateFsmTest {
 
   @Test
   public void testEventThatCreatesEvent() {
-    AtomicReference<FiniteStateMachine<String>> fsm = new AtomicReference<>();
+    AtomicReference<FiniteStateMachine<String, String>> fsm = new AtomicReference<>();
 
-    fsm.set(DeepState.<String>model("test")
+    fsm.set(DeepState.<String, String>model()
         .startingWith("Initial")
         .and().define("Next")
         .and().define("Last")
@@ -197,7 +214,7 @@ public class DeepStateFsmTest {
   
   @Test
   public void testNoInitialState() {
-    assertThatThrownBy(() -> { DeepState.<String>model("test")
+    assertThatThrownBy(() -> { DeepState.<String, String>model()
         .define("Next")
         .and().ready();
     }).isInstanceOf(IllegalStateException.class);
@@ -205,7 +222,7 @@ public class DeepStateFsmTest {
   
   @Test
   public void testBadToTransition() {
-    assertThatThrownBy(() -> { DeepState.<String>model("test")
+    assertThatThrownBy(() -> { DeepState.<String, String>model()
         .startingWith("here")
         .and().transition("whatever").from("here").to("eternity")
         .and().ready();
@@ -214,10 +231,83 @@ public class DeepStateFsmTest {
 
   @Test
   public void testBadFromTransition() {
-    assertThatThrownBy(() -> { DeepState.<String>model("test")
+    assertThatThrownBy(() -> { DeepState.<String, String>model()
         .startingWith("eternity")
         .and().transition("whatever").from("here").to("eternity")
         .and().ready();
     }).isInstanceOf(IllegalStateException.class);
+  }
+  
+  @Test
+  public void testNestedCurrentState() {
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
+        .startingWith("Initial")
+        .nest().startingWith("Initial.Inside")
+        .and().parent()
+        .and().ready();
+    
+    assertThat(fsm.getCurrentState().getName()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentStates().getFirst().getName()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentStates().getLast().getName()).isEqualTo("Initial.Inside");
+    assertThat(fsm.getCurrentStates().size()).isEqualTo(2);
+    assertThat(fsm.getCurrentStates().getLast().getName()).isEqualTo("Initial.Inside");
+  }
+  
+  @Test
+  public void testNestedEvent() {
+    StateAction<String, String> action = mock(StateAction.class);
+    StateAction<String, String> innerAction = mock(StateAction.class);
+    
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
+        .startingWith("initial")
+        .when("test", action)
+        .nest().startingWith("inner")
+        .when("test", innerAction)
+        .and().parent()
+        .and().ready();
+    
+    fsm.accept(new TestEvent("test"));
+    verify(action, times(1)).accept(any(), any());
+    verify(innerAction, times(1)).accept(any(), any());
+  }
+  
+  @Test
+  public void testNestedTransition() {
+    StateAction<String, String> action = mock(StateAction.class);
+    TransitionAction<String, String> transitionAction = mock(TransitionAction.class);
+
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
+        .startingWith("initial")
+        .when("test", action)
+        .nest().startingWith("first")
+        .and().define("second")
+        .and().transition("test").from("first").to("second")
+        .invoke(transitionAction)
+        .and().parent()
+        .and().ready();
+    
+    fsm.accept(new TestEvent("test"));
+    verify(action, times(1)).accept(any(), any());
+    verify(transitionAction, times(1)).accept(any(), any());
+    assertThat(fsm.getCurrentStates().getLast().getName()).isEqualTo("second");
+  }
+  
+  @Test
+  public void testNestedTransitionOfParentState() {
+    Action<String> action = mock(Action.class);
+    FiniteStateMachine<String, String> fsm = DeepState.<String, String>model()
+        .startingWith("initial")
+        .nest().startingWith("first")
+        .and().define("second")
+        .whenExiting(action)
+        .and().transition("test").from("first").to("second")
+        .and().parent()
+        .and().define("last")
+        .and().transition("test").from("initial").to("last")
+        .and().ready();
+    
+    fsm.accept(new TestEvent("test"));
+    verify(action, times(1)).accept(any());
+    assertThat(fsm.getCurrentState().getName()).isEqualTo("last");
   }
 }

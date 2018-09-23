@@ -4,31 +4,31 @@ import java.util.function.Supplier;
 
 import metatype.deepstate.FiniteStateMachine.Event;
 
-public class DeepStateEvent<T> implements Event<String>, Supplier<T> {
-  private final String trigger;
-  private final T payload;
+public class DeepStateEvent<T, P> implements Event<T>, Supplier<P> {
+  private final T trigger;
+  private final P payload;
 
-  public DeepStateEvent(String trigger) {
+  public DeepStateEvent(T trigger) {
     this(trigger, null);
   }
   
-  public DeepStateEvent(String trigger, T payload) {
+  public DeepStateEvent(T trigger, P payload) {
     this.trigger = trigger;
     this.payload = payload;
   }
   
   @Override
-  public String getTrigger() {
+  public T getTrigger() {
     return trigger;
   }
   
   @Override
   public String toString() {
-    return trigger;
+    return trigger.toString();
   }
 
   @Override
-  public T get() {
+  public P get() {
     return payload;
   }
 }
