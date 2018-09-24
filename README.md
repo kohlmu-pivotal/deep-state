@@ -1,8 +1,8 @@
 deep-state
 ===
-A finite state machine library for Java
+A finite state machine library for Java.
 
-#Why
+# Why
 
 A state machine provides allows a clean separation of internal state from external
 events.  As a component grows in features and complexity, typically internal flags
@@ -13,7 +13,7 @@ machine without realizing it.  By explicitly encoding the events, states, and
 transitions within a state machine the code becomes much simpler, more obvious, and
 easier to test. 
 
-#What
+# What
 
 Deep State provides a state machine definition and runtime engine following the standard
 definition of a state machine from the Unified Modeling Language (UML).  The
@@ -50,12 +50,12 @@ state.
 
 For more information on UML state machines, see http://en.wikipedia.org/wiki/UML_state_machine.
 
-#How
+# How
 
 Deep State provides a fluent API for defining the state machine.
 
     // define the state machine
-    FiniteStateMachine<String, String> hello = DeepState.<String, String>model("HelloWorld")
+    FiniteStateMachine<String, String> hello = DeepState.<String, String>model()
         .startingWith("Initial")
         .whenEntering((state) -> System.out.println("Hello World!"))
         .when("hi mom", (state, event) -> System.out.println("Look ma, no hands!"))
