@@ -6,10 +6,16 @@ import java.time.Duration;
 
 import org.junit.Test;
 
-import metatype.deepstate.example.Toaster.ToasterDial;
+import metatype.deepstate.example.Toaster.Dial;
 
-public class ToasterTest {
-  private final Toaster toaster = new Toaster(Duration.ofSeconds(30));
+public abstract class ToasterTest {
+  private Toaster toaster;
+
+  public ToasterTest() {
+    toaster = create(Duration.ofSeconds(30));
+  }
+  
+  public abstract Toaster create(Duration autoIgnite);
 
   @Test
   public void testInitialToasting() {
@@ -19,22 +25,22 @@ public class ToasterTest {
   @Test
   public void testInitialDialSetting() {
     toaster.getToasterSetting((setting) -> {
-      assertThat(setting).isEqualTo(ToasterDial.FIVE);
+      assertThat(setting).isEqualTo(Dial.FIVE);
     }); 
   }
 
   @Test
   public void testSetDial() {
-    toaster.changeToasterSetting(ToasterDial.THREE);
+    toaster.changeToasterSetting(Dial.THREE);
     toaster.getToasterSetting((setting) -> {
-      assertThat(setting).isEqualTo(ToasterDial.THREE);
+      assertThat(setting).isEqualTo(Dial.THREE);
     }); 
   }
   
   @Test
   public void testMakeToast() throws InterruptedException {
-    toaster.changeToasterSetting(ToasterDial.ONE);
-    toaster.makeToast();
+    toaster.changeToasterSetting(Dial.ONE);
+    toaster.depressLever();
     
     Thread.sleep(1000);
     assertThat(toaster.isToasting()).isFalse();
@@ -42,8 +48,8 @@ public class ToasterTest {
 
   @Test
   public void testCancelToasting() throws InterruptedException {
-    toaster.changeToasterSetting(ToasterDial.ELEVEN);
-    toaster.makeToast();
+    toaster.changeToasterSetting(Dial.ELEVEN);
+    toaster.depressLever();
     assertThat(toaster.isToasting()).isTrue();
 
     toaster.pressCancel();
@@ -52,9 +58,9 @@ public class ToasterTest {
 
   @Test
   public void testChangeDialWhileToasting() throws InterruptedException {
-    toaster.changeToasterSetting(ToasterDial.ELEVEN);
-    toaster.makeToast();
-    toaster.changeToasterSetting(ToasterDial.ONE);
+    toaster.changeToasterSetting(Dial.ELEVEN);
+    toaster.depressLever();
+    toaster.changeToasterSetting(Dial.ONE);
 
     Thread.sleep(1000);
     assertThat(toaster.isToasting()).isFalse();
@@ -62,9 +68,9 @@ public class ToasterTest {
 
   @Test
   public void testBreakToaster() throws InterruptedException {
-    toaster.changeToasterSetting(ToasterDial.ONE);
+    toaster.changeToasterSetting(Dial.ONE);
     toaster.jamLever();
-    toaster.makeToast();
+    toaster.depressLever();
     
     Thread.sleep(1000);
     assertThat(toaster.isToasting()).isTrue();
@@ -75,8 +81,8 @@ public class ToasterTest {
 
   @Test
   public void testBurnToast() throws InterruptedException {
-    toaster.changeToasterSetting(ToasterDial.ELEVEN);
-    toaster.makeToast();
+    toaster.changeToasterSetting(Dial.ELEVEN);
+    toaster.depressLever();
     
     Thread.sleep(31000);
     assertThat(toaster.isBurning()).isTrue();
