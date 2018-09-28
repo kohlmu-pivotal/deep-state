@@ -4,6 +4,7 @@ import java.util.Deque;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import metatype.deepstate.FiniteStateMachine.Event;
 
@@ -29,6 +30,15 @@ public interface FiniteStateMachine<T, U> extends Consumer<Event<T>> {
    */
   Deque<State<U>> getCurrentStates();
 
+  /**
+   * Obtains the supplied value in a thread-safe way.  This allows reads to be coordinated
+   * with updates from the state machine.
+   * 
+   * @param value the value to get
+   * @return the value
+   */
+  <R> R read(Supplier<R> value);
+  
   /**
    * A logical representation of the allowed conditions within a system or component.  Must
    * be uniquely named.

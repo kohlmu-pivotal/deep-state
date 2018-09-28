@@ -24,17 +24,13 @@ public abstract class ToasterTest {
 
   @Test
   public void testInitialDialSetting() {
-    toaster.getToasterSetting((setting) -> {
-      assertThat(setting).isEqualTo(Dial.FIVE);
-    }); 
+    assertThat(toaster.getToasterSetting()).isEqualTo(Dial.FIVE);
   }
 
   @Test
   public void testSetDial() {
     toaster.changeToasterSetting(Dial.THREE);
-    toaster.getToasterSetting((setting) -> {
-      assertThat(setting).isEqualTo(Dial.THREE);
-    }); 
+    assertThat(toaster.getToasterSetting()).isEqualTo(Dial.THREE);
   }
   
   @Test

@@ -4,6 +4,7 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import metatype.deepstate.FiniteStateMachine;
 
@@ -30,6 +31,11 @@ public class CompositeState<T, U> extends SimpleState<T, U> implements FiniteSta
   @Override
   public Deque<State<U>> getCurrentStates() {
     return nested.getCurrentStates();
+  }
+  
+  @Override
+  public <R> R read(Supplier<R> value) {
+    return nested.read(value);
   }
   
   @Override

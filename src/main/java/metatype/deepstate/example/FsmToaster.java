@@ -28,7 +28,7 @@ public class FsmToaster extends AbstractToaster {
    * Defines the available toaster events.
    */
   private enum Triggers {
-    DIAL_CHANGED, BAGEL_BUTTON_PRESSED, CANCEL_BUTTON_PRESSED, LEVER_DEPRESSED, TIMER_EXPIRED, DIAL_VIEWED, CATCH_FIRE, LEVER_JAMMED
+    DIAL_CHANGED, BAGEL_BUTTON_PRESSED, CANCEL_BUTTON_PRESSED, LEVER_DEPRESSED, TIMER_EXPIRED, CATCH_FIRE, LEVER_JAMMED
   }
   
   /**
@@ -49,15 +49,6 @@ public class FsmToaster extends AbstractToaster {
     }
   }
   
-  /**
-   * An event that provides provides the toaster dial setting to a consumer. 
-   */
-  private static class GetDialEvent extends DeepStateEvent<Triggers, Consumer<Dial>> {
-    public GetDialEvent(Triggers trigger, Consumer<Dial> setting) {
-      super(trigger, setting);
-    }
-  }
-
   /** finite state machine for the toaster */
   private final FiniteStateMachine<Triggers, States> toaster;
 
@@ -70,7 +61,6 @@ public class FsmToaster extends AbstractToaster {
     this.toaster = DeepState.<Triggers, States>model()
         .startingWith(States.TOASTER)
         .when(Triggers.DIAL_CHANGED, this::changeSetting)
-        .when(Triggers.DIAL_VIEWED, this::provideSetting)
         .when(Triggers.LEVER_JAMMED, this::toggledJammed)
         .configure(this::defineToastingStates)
         .and().ready();
@@ -142,12 +132,8 @@ public class FsmToaster extends AbstractToaster {
   }
   
   @Override
-  public void getToasterSetting(Consumer<Dial> settingConsumer) {
-    toaster.accept(new GetDialEvent(Triggers.DIAL_VIEWED, settingConsumer));
-  }
-
-  private void provideSetting(State<States> current, Event<Triggers> event) {
-     ((GetDialEvent) event).get().accept(setting);
+  public Dial getToasterSetting() {
+    return toaster.read(() -> setting);
   }
 
   private void changeSetting(State<States> current, Event<Triggers> event) {

@@ -79,8 +79,8 @@ public interface Toaster {
   void changeToasterSetting(Dial setting);
   
   /**
-   * Request the current setting of the toaster dial.
-   * @param settingConsumer the consumer to tell about the setting
+   * Returns the current setting of the toaster dial.
+   * @return the setting
    */
-  void getToasterSetting(Consumer<Dial> settingConsumer);
+  Dial getToasterSetting();
 }

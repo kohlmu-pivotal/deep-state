@@ -37,6 +37,11 @@ public class ConcurrentToaster extends AbstractToaster {
   }
   
   @Override
+  public synchronized Dial getToasterSetting() {
+    return setting;
+  }
+
+  @Override
   public synchronized void depressLever() {
     if (toasting || burning) {
       return;
@@ -69,25 +74,6 @@ public class ConcurrentToaster extends AbstractToaster {
     }
   }
   
-  @Override
-  public synchronized void jamLever() {
-    jammed = true;
-  }
-  
-  @Override
-  public synchronized void changeToasterSetting(Dial setting) {
-    this.setting = setting;
-    if (toasting) {
-      popup.cancel();
-      schedulePopup();
-    }
-  }
-
-  @Override
-  public synchronized void getToasterSetting(Consumer<Dial> settingConsumer) {
-    settingConsumer.accept(setting);
-  }
-  
   private void schedulePopup() {
     popup = new TimerTask() {
       @Override
@@ -100,6 +86,20 @@ public class ConcurrentToaster extends AbstractToaster {
       }
     };
     timer.schedule(popup, setting.getToastingTime().toMillis());
+  }
+
+  @Override
+  public synchronized void jamLever() {
+    jammed = true;
+  }
+  
+  @Override
+  public synchronized void changeToasterSetting(Dial setting) {
+    this.setting = setting;
+    if (toasting) {
+      popup.cancel();
+      schedulePopup();
+    }
   }
 
   private void scheduleIgnite() {

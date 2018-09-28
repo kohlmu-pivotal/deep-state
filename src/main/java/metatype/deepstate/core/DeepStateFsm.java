@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,6 +64,12 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
     return initialState;
   }
 
+  public <R> R read(Supplier<R> value) {
+    synchronized (lock) {
+      return value.get();
+    }
+  }
+  
   @Override
   public void accept(Event<T> event) {
     events.add(event);
