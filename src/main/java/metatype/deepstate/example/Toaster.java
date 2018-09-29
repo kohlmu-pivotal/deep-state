@@ -1,7 +1,6 @@
 package metatype.deepstate.example;
 
 import java.time.Duration;
-import java.util.function.Consumer;
 
 /**
  * This is a toaster.  You can make toast.  It has a dial to control doneness.  It also has a
@@ -41,14 +40,14 @@ public interface Toaster {
   }
 
   /**
-   * Returns true when the toast is popped up .
+   * Returns true when the toast is popped up.
    * @return true if done
    */
   boolean isToasting();
   
   /**
-   * Returns true when the toast is popped up .
-   * @return true if done
+   * Returns true when the toaster is on fire.
+   * @return true if burning
    */
   boolean isBurning();
 

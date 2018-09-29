@@ -62,7 +62,7 @@ public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
       return;
     }
       
-    invokeActionForEvent(event, action);
+    invokeAction(event, action);
   }
 
   public void enter() {
@@ -91,7 +91,7 @@ public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
     return exitAction;
   }
 
-  private void invokeActionForEvent(Event<T> event, StateAction<T, U> action) {
+  private void invokeAction(Event<T> event, StateAction<T, U> action) {
     try {
       LOG.debug("Invoking action for event {} on state {}", event, this);
       action.accept(this, event);

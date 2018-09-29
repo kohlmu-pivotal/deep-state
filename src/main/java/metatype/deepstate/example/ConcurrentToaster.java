@@ -3,7 +3,6 @@ package metatype.deepstate.example;
 import java.time.Duration;
 import java.util.Random;
 import java.util.TimerTask;
-import java.util.function.Consumer;
 
 /**
  * A toaster implemented using flags and synchronization of mutable state.

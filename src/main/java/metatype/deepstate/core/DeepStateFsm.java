@@ -48,6 +48,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Deque<State<U>> getCurrentStates() {
     synchronized (lock) {
       Deque<State<U>> states = new ArrayDeque<>();
@@ -110,14 +111,14 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   private void runToCompletion() {
     Event<T> event;
     while ((event = events.poll()) != null) {
-      LOG.debug("Sending event {} to state {}", event, current.getName());
-      current.accept(event);
-
-      transition(event);
+      processEvent(event);
     }
   }
 
-  private void transition(Event<T> event) {
+  private void processEvent(Event<T> event) {
+    LOG.debug("Sending event {} to state {}", event, current.getName());
+    current.accept(event);
+
     findMatchingTransition(event).ifPresent(transition -> performTransition(transition, event));
   }
 
@@ -129,6 +130,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
       .findFirst();
   }
 
+  @SuppressWarnings("unchecked")
   private void performTransition(TriggeredTransition<T, U> transition, Event<T> event) {
     LOG.debug("Transitioning from state {} to state {}", transition.getSource(), transition.getDestination());
     current.exit();
@@ -137,7 +139,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
     current = (SimpleState<T, U>) transition.getDestination();
     current.enter();
     
-    transition(event);
+    processEvent(event);
   }
 
   private void fireTransitionAction(TriggeredTransition<T, U> transition, Event<T> event) {

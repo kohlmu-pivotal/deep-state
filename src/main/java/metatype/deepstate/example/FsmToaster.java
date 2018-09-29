@@ -3,7 +3,6 @@ package metatype.deepstate.example;
 import java.time.Duration;
 import java.util.Random;
 import java.util.TimerTask;
-import java.util.function.Consumer;
 
 import metatype.deepstate.DeepState;
 import metatype.deepstate.DeepState.StateFactory;
@@ -86,13 +85,13 @@ public class FsmToaster extends AbstractToaster {
   }
 
   private StateFactory<Triggers, States> defineHeatingStates(StateFactory<Triggers, States> state) {
-    return state.nest().startingWith(States.NORMAL_TOASTING)
-    .whenEntering(this::turnOnBothHeatingElements)
-    .and().define(States.HALF_TOASTING)
-    .whenEntering(this::turnOnOneHeatingElement)
-    .and().transition(Triggers.BAGEL_BUTTON_PRESSED).from(States.NORMAL_TOASTING).to(States.HALF_TOASTING)
-    .and().transition(Triggers.BAGEL_BUTTON_PRESSED).from(States.HALF_TOASTING).to(States.NORMAL_TOASTING)
-    .and().parent();
+    return state.nest()
+        .startingWith(States.NORMAL_TOASTING)
+        .whenEntering(this::turnOnBothHeatingElements)
+        .and().define(States.HALF_TOASTING).whenEntering(this::turnOnOneHeatingElement)
+        .and().transition(Triggers.BAGEL_BUTTON_PRESSED).from(States.NORMAL_TOASTING).to(States.HALF_TOASTING)
+        .and().transition(Triggers.BAGEL_BUTTON_PRESSED).from(States.HALF_TOASTING).to(States.NORMAL_TOASTING)
+        .and().parent();
   }
 
   @Override
