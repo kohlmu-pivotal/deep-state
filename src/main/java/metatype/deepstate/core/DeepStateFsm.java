@@ -24,6 +24,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   private final SimpleState<T, U> initialState;
   private final Set<TriggeredTransition<T, U>> transitions;
   private final Consumer<Exception> uncaughtExceptionHandler;
+  private final Optional<Consumer<Event<T>>> auditor;
   
   private final Object lock = new Object();
   private boolean active;
@@ -31,13 +32,14 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
 
   private ConcurrentLinkedQueue<Event<T>> events;
   
-  public DeepStateFsm(SimpleState<T, U> initial, Set<TriggeredTransition<T, U>> transitions, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
+  public DeepStateFsm(SimpleState<T, U> initial, Set<TriggeredTransition<T, U>> transitions, Optional<Consumer<Exception>> uncaughtExceptionHandler, Optional<Consumer<Event<T>>> auditor) {
     this.initialState = initial;
     this.transitions = Collections.unmodifiableSet(transitions);
     this.events = new ConcurrentLinkedQueue<>();
     this.uncaughtExceptionHandler = uncaughtExceptionHandler.orElse(ex -> { 
       LOG.warn("Unexpected error", ex);
     });
+    this.auditor = auditor;
   }
 
   @Override
@@ -111,7 +113,9 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   private void runToCompletion() {
     Event<T> event;
     while ((event = events.poll()) != null) {
-      processEvent(event);
+      Event<T> capturedEvent = event;
+      auditor.ifPresent((consumer) -> consumer.accept(capturedEvent));
+      processEvent(capturedEvent);
     }
   }
 

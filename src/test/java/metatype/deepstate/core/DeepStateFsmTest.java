@@ -7,6 +7,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -309,5 +312,40 @@ public class DeepStateFsmTest {
     fsm.accept(new TestEvent("test"));
     verify(action, times(1)).accept(any());
     assertThat(fsm.getCurrentState().getName()).isEqualTo("last");
+  }
+  
+  @Test
+  public void testReplay() {
+    StateAction<String, String> action1 = mock(StateAction.class);
+    StateAction<String, String> action2 = mock(StateAction.class);
+    List<Event<String>> capturedEvents = new ArrayList<>();
+    
+    DeepStateFsm<String, String> fsm = DeepState.<String, String>model()
+        .audit(capturedEvents::add)
+        .startingWith("A")
+        .and().define("B")
+        .when("B.action1", action1)
+        .and().define("C")
+        .when("C.action2", action2)
+        .and().transition("goto B").from("A").to("B")
+        .and().transition("goto C").from("B").to("C")
+        .and().ready();
+    
+    List<Event<String>> events = Arrays.asList(
+        new TestEvent("goto B"),
+        new TestEvent("B.action1"),
+        new TestEvent("goto C"),
+        new TestEvent("C.action2"));
+    
+    events.forEach(fsm::accept);
+    
+    assertThat(fsm.getCurrentState().getName()).isEqualTo("C");
+    verify(action1, times(1)).accept(any(), any());
+    verify(action2, times(1)).accept(any(), any());
+    assertThat(capturedEvents).isEqualTo(events);
+    
+    fsm.begin();
+    new ArrayList<>(capturedEvents).forEach(fsm::accept);
+    assertThat(fsm.getCurrentState().getName()).isEqualTo("C");
   }
 }

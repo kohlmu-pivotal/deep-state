@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import metatype.deepstate.FiniteStateMachine.Action;
+import metatype.deepstate.FiniteStateMachine.Event;
 import metatype.deepstate.FiniteStateMachine.Guard;
 import metatype.deepstate.FiniteStateMachine.StateAction;
 import metatype.deepstate.FiniteStateMachine.TransitionAction;
@@ -30,16 +31,18 @@ public class DeepState {
     
     private Optional<Consumer<Exception>> uncaughtExceptionHandler;
     private Optional<StateFactory<T, U>> parent;
+    private Optional<Consumer<Event<T>>> auditor;
     
     private FsmFactory() {
       this(Optional.empty());
     }
     
     private FsmFactory(Optional<StateFactory<T, U>> parentState) {
-      states = new HashMap<>();
-      transitions = new HashSet<>();
-      uncaughtExceptionHandler = Optional.empty();
+      this.states = new HashMap<>();
+      this.transitions = new HashSet<>();
+      this.uncaughtExceptionHandler = Optional.empty();
       this.parent = parentState;
+      this.auditor = Optional.empty();
     }
 
     public FsmFactory<T, U> configure(Consumer<FsmFactory<T, U>> factory) {
@@ -64,6 +67,11 @@ public class DeepState {
     
     public FsmFactory<T, U> catchExceptionsUsing(Consumer<Exception> exceptionHandler) {
       uncaughtExceptionHandler = Optional.of(exceptionHandler);
+      return this;
+    }
+    
+    public FsmFactory<T, U> audit(Consumer<Event<T>> auditor) {
+      this.auditor = Optional.of(auditor);
       return this;
     }
     
@@ -109,7 +117,7 @@ public class DeepState {
         
         realTransitions.add(new TriggeredTransition<>(factory.trigger, from, to, factory.guard, factory.action));
       });
-      return new DeepStateFsm<>(realStates.get(initialState), realTransitions, uncaughtExceptionHandler);
+      return new DeepStateFsm<>(realStates.get(initialState), realTransitions, uncaughtExceptionHandler, auditor);
     }
   }
   
