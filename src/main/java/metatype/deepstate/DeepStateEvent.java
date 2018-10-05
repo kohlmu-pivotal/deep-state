@@ -1,10 +1,10 @@
 package metatype.deepstate;
 
-import java.util.function.Supplier;
+import java.util.Optional;
 
 import metatype.deepstate.FiniteStateMachine.Event;
 
-public class DeepStateEvent<T, P> implements Event<T>, Supplier<P> {
+public class DeepStateEvent<T, P> implements Event<T> {
   private final T trigger;
   private final P payload;
 
@@ -27,8 +27,7 @@ public class DeepStateEvent<T, P> implements Event<T>, Supplier<P> {
     return trigger.toString();
   }
 
-  @Override
-  public P get() {
-    return payload;
+  public Optional<P> get() {
+    return Optional.ofNullable(payload);
   }
 }

@@ -9,13 +9,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import metatype.deepstate.FiniteStateMachine;
 
 public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LoggerFactory.getLogger(DeepStateFsm.class);
   
   private static final <T> Guard<T> isTrue() {
     return trigger -> true;
@@ -24,7 +24,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   private final SimpleState<T, U> initialState;
   private final Set<TriggeredTransition<T, U>> transitions;
   private final Consumer<Exception> uncaughtExceptionHandler;
-  private final Optional<Consumer<Event<T>>> auditor;
+  private final Consumer<Event<T>> auditor;
   
   private final Object lock = new Object();
   private boolean active;
@@ -32,13 +32,11 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
 
   private ConcurrentLinkedQueue<Event<T>> events;
   
-  public DeepStateFsm(SimpleState<T, U> initial, Set<TriggeredTransition<T, U>> transitions, Optional<Consumer<Exception>> uncaughtExceptionHandler, Optional<Consumer<Event<T>>> auditor) {
+  public DeepStateFsm(SimpleState<T, U> initial, Set<TriggeredTransition<T, U>> transitions, Consumer<Exception> uncaughtExceptionHandler, Consumer<Event<T>> auditor) {
     this.initialState = initial;
     this.transitions = Collections.unmodifiableSet(transitions);
     this.events = new ConcurrentLinkedQueue<>();
-    this.uncaughtExceptionHandler = uncaughtExceptionHandler.orElse(ex -> { 
-      LOG.warn("Unexpected error", ex);
-    });
+    this.uncaughtExceptionHandler = defaultExceptionHandler(uncaughtExceptionHandler);
     this.auditor = auditor;
   }
 
@@ -110,12 +108,22 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
     return this;
   }
 
+  private Consumer<Exception> defaultExceptionHandler(Consumer<Exception> uncaughtExceptionHandler) {
+    if (uncaughtExceptionHandler == null) {
+      uncaughtExceptionHandler = (e) -> { 
+        LOG.warn("Unexpected error", e);
+      };
+    }
+    return uncaughtExceptionHandler;
+  }
+
   private void runToCompletion() {
     Event<T> event;
     while ((event = events.poll()) != null) {
-      Event<T> capturedEvent = event;
-      auditor.ifPresent((consumer) -> consumer.accept(capturedEvent));
-      processEvent(capturedEvent);
+      if (auditor != null) {
+        auditor.accept(event);
+      }
+      processEvent(event);
     }
   }
 

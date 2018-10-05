@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import metatype.deepstate.FiniteStateMachine.Action;
 import metatype.deepstate.FiniteStateMachine.Event;
@@ -14,35 +14,32 @@ import metatype.deepstate.FiniteStateMachine.State;
 import metatype.deepstate.FiniteStateMachine.StateAction;
 
 public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
-  private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LoggerFactory.getLogger(SimpleState.class);
 
   /** the name of the state */
   private final U name;
   
   /** the action to execute before entering the state */
-  private final Optional<Action<U>> entryAction;
+  private final Action<U> entryAction;
   
   /** the action to execute after entering the state */
-  private final Optional<Action<U>> exitAction;
+  private final Action<U> exitAction;
   
   /** the set of internal actions to invoke when an event trigger matches */
   private final Map<T, StateAction<T, U>> actions;
   
   /** the action that is invoked if no other actions match */
-  private final Optional<StateAction<T, U>> defaultAction;
+  private final StateAction<T, U> defaultAction;
   
   private final Consumer<Exception> uncaughtExceptionHandler;
   
-  public SimpleState(U name, Optional<Action<U>> entry, Optional<Action<U>> exit, Map<T, StateAction<T, U>> actions, Optional<StateAction<T, U>> defaultAction, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
+  public SimpleState(U name, Action<U> entry, Action<U> exit, Map<T, StateAction<T, U>> actions, StateAction<T, U> defaultAction, Consumer<Exception> uncaughtExceptionHandler) {
     this.name = name;
     this.entryAction = entry;
     this.exitAction = exit;
     this.actions = new HashMap<>(actions);
     this.defaultAction = defaultAction;
-    this.uncaughtExceptionHandler = uncaughtExceptionHandler.orElse((e) -> { 
-      LOG.warn("Unexpected error", e);
-    });
-
+    this.uncaughtExceptionHandler = defaultExceptionHandler(uncaughtExceptionHandler);
   }
 
   @Override
@@ -57,18 +54,13 @@ public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
 
   @Override
   public void accept(Event<T> event) {
-    StateAction<T, U> action = findActionForTrigger(event.getTrigger());
-    if (action == null) {
-      return;
-    }
-      
-    invokeAction(event, action);
+    findActionForTrigger(event.getTrigger()).ifPresent((action) -> invokeAction(event, action));
   }
 
   public void enter() {
     try {
       LOG.debug("Entering state {}", this);
-      entryAction.ifPresent((action) -> action.accept(this));
+      getEntryAction().ifPresent((action) -> action.accept(this));
     } catch (Exception e) {
       uncaughtExceptionHandler.accept(e);
     }
@@ -77,18 +69,27 @@ public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
   public void exit() {
     try {
       LOG.debug("Exiting state {}", this);
-      exitAction.ifPresent((action) -> action.accept(this));
+      getExitAction().ifPresent((action) -> action.accept(this));
     } catch (Exception e) {
       uncaughtExceptionHandler.accept(e);
     }
   }
 
   protected Optional<Action<U>> getEntryAction() {
-    return entryAction;
+    return Optional.ofNullable(entryAction);
   }
 
   protected Optional<Action<U>> getExitAction() {
-    return exitAction;
+    return Optional.ofNullable(exitAction);
+  }
+
+  private Consumer<Exception> defaultExceptionHandler(Consumer<Exception> uncaughtExceptionHandler) {
+    if (uncaughtExceptionHandler == null) {
+      uncaughtExceptionHandler = (e) -> { 
+        LOG.warn("Unexpected error", e);
+      };
+    }
+    return uncaughtExceptionHandler;
   }
 
   private void invokeAction(Event<T> event, StateAction<T, U> action) {
@@ -100,11 +101,11 @@ public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
     }
   }
   
-  private StateAction<T, U> findActionForTrigger(T trigger) {
+  private Optional<StateAction<T, U>> findActionForTrigger(T trigger) {
     StateAction<T, U> action = actions.get(trigger);
     if (action == null) {
-      action = defaultAction.orElse(null);
+      action = defaultAction;
     }
-    return action;
+    return Optional.ofNullable(action);
   }
 }

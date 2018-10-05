@@ -3,7 +3,7 @@ package metatype.deepstate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -29,20 +29,18 @@ public class DeepState {
     private Map<U, StateFactory<T, U>> states;
     private Set<TransitionFactory<T, U>> transitions;
     
-    private Optional<Consumer<Exception>> uncaughtExceptionHandler;
-    private Optional<StateFactory<T, U>> parent;
-    private Optional<Consumer<Event<T>>> auditor;
+    private Consumer<Exception> uncaughtExceptionHandler;
+    private StateFactory<T, U> parent;
+    private Consumer<Event<T>> auditor;
     
     private FsmFactory() {
-      this(Optional.empty());
+      this(null);
     }
     
-    private FsmFactory(Optional<StateFactory<T, U>> parentState) {
+    private FsmFactory(StateFactory<T, U> parentState) {
       this.states = new HashMap<>();
       this.transitions = new HashSet<>();
-      this.uncaughtExceptionHandler = Optional.empty();
       this.parent = parentState;
-      this.auditor = Optional.empty();
     }
 
     public FsmFactory<T, U> configure(Consumer<FsmFactory<T, U>> factory) {
@@ -66,12 +64,12 @@ public class DeepState {
     }
     
     public FsmFactory<T, U> catchExceptionsUsing(Consumer<Exception> exceptionHandler) {
-      uncaughtExceptionHandler = Optional.of(exceptionHandler);
+      uncaughtExceptionHandler = exceptionHandler;
       return this;
     }
     
     public FsmFactory<T, U> audit(Consumer<Event<T>> auditor) {
-      this.auditor = Optional.of(auditor);
+      this.auditor = auditor;
       return this;
     }
     
@@ -82,7 +80,8 @@ public class DeepState {
     }
     
     public StateFactory<T, U> parent() {
-      return parent.orElseThrow(() -> new IllegalStateException("Parent state is not defined"));
+      Objects.requireNonNull(parent, "Parent state is not defined");
+      return parent;
     }
     
     public DeepStateFsm<T, U> ready() {
@@ -111,7 +110,7 @@ public class DeepState {
           throw new IllegalStateException("Undefined to state " + factory.to + " for transition " + factory.trigger);
         }
         
-        if (from == to && !factory.guard.isPresent()) {
+        if (from == to && factory.guard == null) {
           throw new IllegalStateException("Unguarded self transitions will cause an infinite loop in state " + factory.to);
         }
         
@@ -123,19 +122,15 @@ public class DeepState {
   
   public static class StateFactory<T, U> {
     private final FsmFactory<T, U> fsm;
-    private Optional<Action<U>> entryAction;
-    private Optional<Action<U>> exitAction;
+    private Action<U> entryAction;
+    private Action<U> exitAction;
     private Map<T, StateAction<T, U>> actions;
-    private Optional<StateAction<T, U>> defaultAction;
-    private Optional<FsmFactory<T, U>> nestedStateMachine;
+    private StateAction<T, U> defaultAction;
+    private FsmFactory<T, U> nestedStateMachine;
     
     private StateFactory(FsmFactory<T, U> fsm) {
       this.fsm = fsm;
-      this.entryAction = Optional.empty();
-      this.exitAction = Optional.empty();
-      this.defaultAction = Optional.empty();
       actions = new HashMap<>();
-      nestedStateMachine = Optional.empty();
     }
     
     public StateFactory<T, U> configure(Consumer<StateFactory<T, U>> factory) {
@@ -144,12 +139,12 @@ public class DeepState {
     }
     
     public StateFactory<T, U> whenEntering(Action<U> entry) {
-      this.entryAction = Optional.of(entry);
+      this.entryAction = entry;
       return this;
     }
     
     public StateFactory<T, U> whenExiting(Action<U> exit) {
-      this.exitAction = Optional.of(exit);
+      this.exitAction = exit;
       return this;
     }
     
@@ -159,24 +154,24 @@ public class DeepState {
     }
     
     public StateFactory<T, U> whenNothingElseMatches(StateAction<T, U> defaultAction) {
-      this.defaultAction = Optional.of(defaultAction);
+      this.defaultAction = defaultAction;
       return this;
     }
     
     public FsmFactory<T, U> nest() {
-      nestedStateMachine = Optional.of(new FsmFactory<>(Optional.of(this)));
-      return nestedStateMachine.get();
+      nestedStateMachine = new FsmFactory<>(this);
+      return nestedStateMachine;
     }
 
     public FsmFactory<T, U> and() {
       return fsm;
     }
     
-    private SimpleState<T, U> create(U name, Optional<Consumer<Exception>> uncaughtExceptionHandler) {
-      if (nestedStateMachine.isPresent()) {
-        return new CompositeState<>(name, entryAction, exitAction, actions, defaultAction, uncaughtExceptionHandler, nestedStateMachine.get().create());
+    private SimpleState<T, U> create(U name, Consumer<Exception> uncaughtExceptionHandler) {
+      if (nestedStateMachine == null) {
+        return new SimpleState<>(name, entryAction, exitAction, actions, defaultAction, uncaughtExceptionHandler);
       }
-      return new SimpleState<>(name, entryAction, exitAction, actions, defaultAction, uncaughtExceptionHandler);
+      return new CompositeState<>(name, entryAction, exitAction, actions, defaultAction, uncaughtExceptionHandler, nestedStateMachine.create());
     }
   }
   
@@ -186,14 +181,12 @@ public class DeepState {
     
     private U from;
     private U to;
-    private Optional<Guard<T>> guard;
-    private Optional<TransitionAction<T, U>> action;
+    private Guard<T> guard;
+    private TransitionAction<T, U> action;
 
     private TransitionFactory(FsmFactory<T, U> fsm, T trigger) {
       this.fsm = fsm;
       this.trigger = trigger;
-      guard = Optional.empty();
-      action = Optional.empty();
     }
     
     public TransitionFactory<T, U> configure(Consumer<TransitionFactory<T, U>> factory) {
@@ -212,12 +205,12 @@ public class DeepState {
     }
 
     public TransitionFactory<T, U> guardedBy(Guard<T> guard) {
-      this.guard = Optional.of(guard);
+      this.guard = guard;
       return this;
     }
     
     public TransitionFactory<T, U> invoke(TransitionAction<T, U> action) {
-      this.action = Optional.of(action);
+      this.action = action;
       return this;
     }
     

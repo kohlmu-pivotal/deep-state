@@ -20,10 +20,10 @@ public class TriggeredTransition<T, U> implements Transition<U> {
   private final Predicate<T> trigger;
   private final State<U> source;
   private final State<U> destination;
-  private final Optional<Guard<T>> guard;
-  private final Optional<TransitionAction<T, U>> action;
+  private final Guard<T> guard;
+  private final TransitionAction<T, U> action;
   
-  public TriggeredTransition(Predicate<T> trigger, State<U> source, State<U> destination, Optional<Guard<T>> guard, Optional<TransitionAction<T, U>> action) {
+  public TriggeredTransition(Predicate<T> trigger, State<U> source, State<U> destination, Guard<T> guard, TransitionAction<T, U> action) {
     this.trigger = trigger;
     this.source = source;
     this.destination = destination;
@@ -31,11 +31,11 @@ public class TriggeredTransition<T, U> implements Transition<U> {
     this.action = action;
   }
 
-  public TriggeredTransition(T trigger, State<U> source, State<U> destination, Optional<Guard<T>> guard, Optional<TransitionAction<T, U>> action) {
+  public TriggeredTransition(T trigger, State<U> source, State<U> destination, Guard<T> guard, TransitionAction<T, U> action) {
     this(isEqualTo(trigger), source, destination, guard, action);
   }
   
-  public TriggeredTransition(State<U> source, State<U> destination, Optional<Guard<T>> guard, Optional<TransitionAction<T, U>> action) {
+  public TriggeredTransition(State<U> source, State<U> destination, Guard<T> guard, TransitionAction<T, U> action) {
     this(isTrue(), source, destination, guard, action);
   }
   
@@ -50,11 +50,11 @@ public class TriggeredTransition<T, U> implements Transition<U> {
   }
 
   public Optional<Guard<T>> getGuard() {
-    return guard;
+    return Optional.ofNullable(guard);
   }
   
   public Optional<TransitionAction<T, U>> getAction() {
-    return action;
+    return Optional.ofNullable(action);
   }
   
   public Predicate<T> getTrigger() {

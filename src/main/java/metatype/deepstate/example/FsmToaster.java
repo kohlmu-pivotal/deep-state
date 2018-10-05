@@ -136,7 +136,7 @@ public class FsmToaster extends AbstractToaster {
   }
 
   private void changeSetting(State<States> current, Event<Triggers> event) {
-    setting = ((SetDialEvent) event).get();
+    setting = ((SetDialEvent) event).get().orElseThrow(() -> new IllegalStateException("Unspecified dial setting"));
   }
   
   private void toggledJammed(State<States> current, Event<Triggers> event) {
