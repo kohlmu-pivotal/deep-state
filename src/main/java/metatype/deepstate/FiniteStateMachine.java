@@ -47,7 +47,7 @@ public interface FiniteStateMachine<T, U> extends Consumer<Event<T>> {
    */
   interface State<U> {
     /**
-     * Returns an objects representing the name of the state.
+     * Returns an object representing the name of the state.
      * @return the name
      */
     U getName();

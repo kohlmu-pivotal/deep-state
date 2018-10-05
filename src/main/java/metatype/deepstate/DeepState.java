@@ -44,16 +44,19 @@ public class DeepState {
     }
 
     public FsmFactory<T, U> configure(Consumer<FsmFactory<T, U>> factory) {
+      Objects.requireNonNull(factory, "factory must not be null");
       factory.accept(this);
       return this;
     }
 
     public StateFactory<T, U> startingWith(U state) {
+      Objects.requireNonNull(state, "state must not be null");
       initialState = state;
       return define(state);
     }
 
     public StateFactory<T, U> define(U state) {
+      Objects.requireNonNull(state, "state must not be null");
       if (states.containsKey(state)) {
         throw new IllegalStateException("Unable to redefine existing state " + state);
       }
@@ -64,16 +67,19 @@ public class DeepState {
     }
     
     public FsmFactory<T, U> catchExceptionsUsing(Consumer<Exception> exceptionHandler) {
+      Objects.requireNonNull(exceptionHandler, "exception handler must not be null");
       uncaughtExceptionHandler = exceptionHandler;
       return this;
     }
     
     public FsmFactory<T, U> audit(Consumer<Event<T>> auditor) {
+      Objects.requireNonNull(auditor, "auditor must not be null");
       this.auditor = auditor;
       return this;
     }
     
     public TransitionFactory<T, U> transition(T trigger) {
+      Objects.requireNonNull(trigger, "trigger must not be null");
       TransitionFactory<T, U> factory = new TransitionFactory<>(this, trigger);
       transitions.add(factory);
       return factory;
@@ -89,9 +95,7 @@ public class DeepState {
     }
     
     private DeepStateFsm<T, U> create() {
-      if (initialState == null) {
-        throw new IllegalStateException("Initial state is not defined");
-      }
+      Objects.requireNonNull(initialState, "initial state must not be null");
       
       Map<U, SimpleState<T, U>> realStates = new HashMap<>();
       states.forEach((name, factory) -> {
@@ -101,14 +105,10 @@ public class DeepState {
       Set<TriggeredTransition<T, U>> realTransitions = new HashSet<>();
       transitions.forEach((factory) -> {
         SimpleState<T, U> from = realStates.get(factory.from);
-        if (from == null) {
-          throw new IllegalStateException("Undefined from state " + factory.from + " for transition " + factory.trigger);
-        }
+        Objects.requireNonNull(from, "Undefined from state " + factory.from + " for transition " + factory.trigger);
         
         SimpleState<T, U> to = realStates.get(factory.to);
-        if (to == null) {
-          throw new IllegalStateException("Undefined to state " + factory.to + " for transition " + factory.trigger);
-        }
+        Objects.requireNonNull(to, "Undefined to state " + factory.to + " for transition " + factory.trigger);
         
         if (from == to && factory.guard == null) {
           throw new IllegalStateException("Unguarded self transitions will cause an infinite loop in state " + factory.to);

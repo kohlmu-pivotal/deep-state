@@ -220,7 +220,7 @@ public class DeepStateFsmTest {
     assertThatThrownBy(() -> { DeepState.<String, String>model()
         .define("Next")
         .and().ready();
-    }).isInstanceOf(IllegalStateException.class);
+    }).isInstanceOf(NullPointerException.class);
   }
   
   @Test
@@ -229,7 +229,7 @@ public class DeepStateFsmTest {
         .startingWith("here")
         .and().transition("whatever").from("here").to("eternity")
         .and().ready();
-    }).isInstanceOf(IllegalStateException.class);
+    }).isInstanceOf(NullPointerException.class);
   }
 
   @Test
@@ -238,7 +238,7 @@ public class DeepStateFsmTest {
         .startingWith("eternity")
         .and().transition("whatever").from("here").to("eternity")
         .and().ready();
-    }).isInstanceOf(IllegalStateException.class);
+    }).isInstanceOf(NullPointerException.class);
   }
   
   @Test
