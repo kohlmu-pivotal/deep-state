@@ -6,15 +6,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import metatype.deepstate.FiniteStateMachine.Event;
-
 /**
  * A representation of a UML state machine.
  *
  * @param <T> the type of the event trigger
  * @param <U> the type of the state name
  */
-public interface FiniteStateMachine<T, U> extends Consumer<Event<T>> {
+public interface FiniteStateMachine<T, U> {
   /**
    * Returns the current state.
    * @return the current state
@@ -40,17 +38,25 @@ public interface FiniteStateMachine<T, U> extends Consumer<Event<T>> {
   <R> R read(Supplier<R> value);
   
   /**
-   * A logical representation of the allowed conditions within a system or component.  Must
-   * be uniquely named.
+   * Updates the state machine by applying the supplied event, invoking any actions and transitions
+   * as needed according to the state machine definition.
    * 
-   * @param <U> the type of the state name
+   * @param event the event to apply
+   */
+  void accept(Event<T> event);
+  
+  /**
+   * A logical representation of the allowed conditions within a system or component.  Must
+   * be uniquely identified.
+   * 
+   * @param <U> the type of the state identity
    */
   interface State<U> {
     /**
-     * Returns an object representing the name of the state.
-     * @return the name
+     * Returns an object representing the identity of the state.
+     * @return the identity
      */
-    U getName();
+    U getIdentity();
   }
 
   /**

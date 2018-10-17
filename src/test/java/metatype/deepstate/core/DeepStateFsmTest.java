@@ -52,7 +52,7 @@ public class DeepStateFsmTest {
         .startingWith("Initial")
         .and().ready();
     
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Initial");
   }
 
   @Test
@@ -127,7 +127,7 @@ public class DeepStateFsmTest {
     verify(exit, times(1)).accept(any());
     verify(guard, times(1)).accept(any(), any());
     
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Next");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Next");
   }
 
   @Test
@@ -152,13 +152,13 @@ public class DeepStateFsmTest {
     verify(entry, times(0)).accept(any());
     verify(exit, times(0)).accept(any());
     verify(guard, times(0)).accept(any(), any());
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Initial");
 
     fsm.accept(new TestEvent("go", true));
     verify(entry, times(1)).accept(any());
     verify(exit, times(1)).accept(any());
     verify(guard, times(1)).accept(any(), any());
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Next");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Next");
   }
   
   @Test
@@ -172,7 +172,7 @@ public class DeepStateFsmTest {
         .and().ready();
     
     fsm.accept(new TestEvent("goto next"));
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Next");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Next");
   }
   
   @Test
@@ -195,7 +195,7 @@ public class DeepStateFsmTest {
     
     verify(entry, times(2)).accept(any());
     verify(exit, times(1)).accept(any());
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Initial");
   }
 
   @Test
@@ -212,7 +212,7 @@ public class DeepStateFsmTest {
         .and().ready());
 
     fsm.get().accept(new TestEvent("goto next", false));
-    assertThat(fsm.get().getCurrentState().getName()).isEqualTo("Last");
+    assertThat(fsm.get().getCurrentState().getIdentity()).isEqualTo("Last");
   }
   
   @Test
@@ -249,11 +249,11 @@ public class DeepStateFsmTest {
         .and().parent()
         .and().ready();
     
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("Initial");
-    assertThat(fsm.getCurrentStates().getFirst().getName()).isEqualTo("Initial");
-    assertThat(fsm.getCurrentStates().getLast().getName()).isEqualTo("Initial.Inside");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentStates().getFirst().getIdentity()).isEqualTo("Initial");
+    assertThat(fsm.getCurrentStates().getLast().getIdentity()).isEqualTo("Initial.Inside");
     assertThat(fsm.getCurrentStates().size()).isEqualTo(2);
-    assertThat(fsm.getCurrentStates().getLast().getName()).isEqualTo("Initial.Inside");
+    assertThat(fsm.getCurrentStates().getLast().getIdentity()).isEqualTo("Initial.Inside");
   }
   
   @Test
@@ -292,7 +292,7 @@ public class DeepStateFsmTest {
     fsm.accept(new TestEvent("test"));
     verify(action, times(1)).accept(any(), any());
     verify(transitionAction, times(1)).accept(any(), any());
-    assertThat(fsm.getCurrentStates().getLast().getName()).isEqualTo("second");
+    assertThat(fsm.getCurrentStates().getLast().getIdentity()).isEqualTo("second");
   }
   
   @Test
@@ -311,7 +311,7 @@ public class DeepStateFsmTest {
     
     fsm.accept(new TestEvent("test"));
     verify(action, times(1)).accept(any());
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("last");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("last");
   }
   
   @Test
@@ -339,13 +339,13 @@ public class DeepStateFsmTest {
     
     events.forEach(fsm::accept);
     
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("C");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("C");
     verify(action1, times(1)).accept(any(), any());
     verify(action2, times(1)).accept(any(), any());
     assertThat(capturedEvents).isEqualTo(events);
     
     fsm.begin();
     new ArrayList<>(capturedEvents).forEach(fsm::accept);
-    assertThat(fsm.getCurrentState().getName()).isEqualTo("C");
+    assertThat(fsm.getCurrentState().getIdentity()).isEqualTo("C");
   }
 }

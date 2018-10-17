@@ -91,7 +91,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   }
 
   public DeepStateFsm<T, U> begin() {
-    LOG.debug("Setting initial state {}", initialState.getName());
+    LOG.debug("Setting initial state {}", initialState.getIdentity());
     synchronized (lock) {
       current = initialState;
       current.enter();
@@ -101,7 +101,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
 
   public DeepStateFsm<T, U> end() {
     synchronized (lock) {
-      LOG.debug("Leaving final state {}", current.getName());
+      LOG.debug("Leaving final state {}", current.getIdentity());
       current.exit();
       current = null;
     }
@@ -128,7 +128,7 @@ public class DeepStateFsm<T, U> implements FiniteStateMachine<T, U> {
   }
 
   private void processEvent(Event<T> event) {
-    LOG.debug("Sending event {} to state {}", event, current.getName());
+    LOG.debug("Sending event {} to state {}", event, current.getIdentity());
     current.accept(event);
 
     findMatchingTransition(event).ifPresent(transition -> performTransition(transition, event));

@@ -97,12 +97,12 @@ public class FsmToaster extends AbstractToaster {
   @Override
   public boolean isToasting() {
     return toaster.getCurrentStates().stream()
-        .anyMatch((state) -> state.getName().equals(States.TOASTING));
+        .anyMatch((state) -> state.getIdentity().equals(States.TOASTING));
   }
   
   @Override
   public boolean isBurning() {
-    return toaster.getCurrentStates().getLast().getName().equals(States.ON_FIRE);
+    return toaster.getCurrentStates().getLast().getIdentity().equals(States.ON_FIRE);
   }
 
   @Override
@@ -136,7 +136,7 @@ public class FsmToaster extends AbstractToaster {
   }
 
   private void changeSetting(State<States> current, Event<Triggers> event) {
-    setting = ((SetDialEvent) event).get().orElseThrow(() -> new IllegalStateException("Unspecified dial setting"));
+    setting = ((SetDialEvent) event).getPayload().orElseThrow(() -> new IllegalStateException("Unspecified dial setting"));
   }
   
   private void toggledJammed(State<States> current, Event<Triggers> event) {

@@ -43,13 +43,13 @@ public class SimpleState<T, U> implements State<U>, Consumer<Event<T>> {
   }
 
   @Override
-  public U getName() {
+  public U getIdentity() {
     return name;
   }
   
   @Override
   public String toString() {
-    return getName().toString();
+    return getIdentity().toString();
   }
 
   @Override

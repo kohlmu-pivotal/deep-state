@@ -4,6 +4,12 @@ import java.util.Optional;
 
 import metatype.deepstate.FiniteStateMachine.Event;
 
+/**
+ * An event that contains a trigger and an optional payload
+ *
+ * @param <T> the trigger type
+ * @param <P> the payload type
+ */
 public class DeepStateEvent<T, P> implements Event<T> {
   private final T trigger;
   private final P payload;
@@ -27,7 +33,7 @@ public class DeepStateEvent<T, P> implements Event<T> {
     return trigger.toString();
   }
 
-  public Optional<P> get() {
+  public Optional<P> getPayload() {
     return Optional.ofNullable(payload);
   }
 }

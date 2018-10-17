@@ -28,7 +28,7 @@ public class HelloWorld {
         .and().transition(Triggers.SAY_HELLO).from(States.HELLO).to(States.WORLD)
         
         // invoke this action during the transition
-        .invoke((state, event) -> System.out.println(((DeepStateEvent<Triggers, String>) event).get()))
+        .invoke((state, event) -> System.out.println(((DeepStateEvent<Triggers, String>) event).getPayload()))
         
         // let's go!
         .and().ready();
